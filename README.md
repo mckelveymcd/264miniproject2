@@ -1,4 +1,4 @@
 # 264miniproject2
-this is mckelveymcd
+this is mckelveymcd and we have both approved it
 
 
