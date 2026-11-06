@@ -1,6 +1,6 @@
 # 264miniproject2
-<<<<<<< HEAD
+this will be my last change
 keysej
 =======
 
-sdfjdlkjfdklsj
+
