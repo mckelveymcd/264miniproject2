@@ -25,5 +25,19 @@ for(i in letters){
   fighterdatatemp <- fighterdatatemp[[1]]
   fighterdata <- bind_rows(fighterdata, fighterdatatemp)
 }
+
+#ft_in_to_in <- function(str){
+#  feet <- str_extract(str, "^\\d' ")
+#  inches <- parse_number(str_remove(str, feet))
+#  feet <- parse_number(str_remove(feet, "' "))
+#  str <- 12*feet + inches
+#}
+
+#ft_in_to_in(fighterdataclean$Ht.)
+
+fighterdataclean <- fighterdata |>
+  select(-Belt) |>
+  filter(!is.na(Last)) |>
+  mutate(across(everything(), ~ str_replace_all(.x, "--", NA_character_)))
 ```
 
