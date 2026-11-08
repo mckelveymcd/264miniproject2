@@ -1,0 +1,29 @@
+---
+title: "DataScraping"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(polite)
+
+robotstxt::paths_allowed("http://ufcstats.com/statistics/fighters?char=a")
+
+url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a")
+
+table <- html_nodes(url, css = "table")
+
+fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
+
+for(i in letters){
+  url <- str_c("http://ufcstats.com/statistics/fighters?char=", i, "&page=all")
+  fighterdatatemp <- read_html_live(url) |>
+    html_nodes(css = "table") |>
+    html_table(header = TRUE, fill = TRUE)
+  bind_rows(fighterdata, fighterdatatemp)
+  fighterdatatemp <- fighterdatatemp[[1]]
+  fighterdata <- bind_rows(fighterdata, fighterdatatemp)
+}
+```
+
