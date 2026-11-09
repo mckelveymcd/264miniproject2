@@ -27,17 +27,22 @@ for(i in letters){
 }
 
 #ft_in_to_in <- function(str){
-#  feet <- str_extract(str, "^\\d' ")
-#  inches <- parse_number(str_remove(str, feet))
-#  feet <- parse_number(str_remove(feet, "' "))
-#  str <- 12*feet + inches
-#}
+  feet <- str_extract(str, "^\\d' ")
+  inches <- parse_number(str_remove(str, feet))
+  feet <- parse_number(str_remove(feet, "' "))
+  str <- 12*feet + inches
+}
 
-#ft_in_to_in(fighterdataclean$Ht.)
+ft_in_to_in(fighterdataclean$Ht.)
 
 fighterdataclean <- fighterdata |>
   select(-Belt) |>
   filter(!is.na(Last)) |>
-  mutate(across(everything(), ~ str_replace_all(.x, "--", NA_character_)))
+  mutate(across(everything(), ~ str_replace_all(.x, "--", NA_character_)),
+         Ht. = ifelse(is.na(Ht.), "0' 0\"", Ht.),
+         Ht_inches = ft_in_to_in(Ht.),
+         Ht. = ifelse(str_detect(Ht., "0' 0\""), NA_character_, Ht.),
+         Ht_inches = ifelse(str_detect(Ht., "0' 0\""), NA_character_, Ht_inches),
+         Reach_inches = parse_number(Reach))
 ```
 
