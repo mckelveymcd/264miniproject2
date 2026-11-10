@@ -7,6 +7,7 @@ format: html
 library(tidyverse)
 library(rvest)
 library(polite)
+library(chromote)
 
 robotstxt::paths_allowed("http://ufcstats.com/statistics/fighters?char=a")
 
@@ -26,7 +27,7 @@ for(i in letters){
   fighterdata <- bind_rows(fighterdata, fighterdatatemp)
 }
 
-#ft_in_to_in <- function(str){
+ft_in_to_in <- function(str){
   feet <- str_extract(str, "^\\d' ")
   inches <- parse_number(str_remove(str, feet))
   feet <- parse_number(str_remove(feet, "' "))
