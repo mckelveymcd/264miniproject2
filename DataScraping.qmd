@@ -11,11 +11,11 @@ library(chromote)
 
 robotstxt::paths_allowed("http://ufcstats.com/statistics/fighters?char=a")
 
-url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a")
+#url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a")
 
-table <- html_nodes(url, css = "table")
+#table <- html_nodes(url, css = "table")
 
-fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
+#fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
 
 for(i in letters){
   url <- str_c("http://ufcstats.com/statistics/fighters?char=", i, "&page=all")
