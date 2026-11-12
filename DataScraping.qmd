@@ -11,11 +11,17 @@ library(chromote)
 
 robotstxt::paths_allowed("http://ufcstats.com/statistics/fighters?char=a")
 
-#url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a")
+set_chrome_args(c(
+  default_chrome_args(),
+  "--disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable"
+)) #chrome says the site is unsafe, so had to run this so that it will bypass the warning and we can get our data.
 
-#table <- html_nodes(url, css = "table")
+url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a&page=all")
+#url$view()
 
-#fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
+table <- html_nodes(url, css = "table")
+
+fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
 
 for(i in letters){
   url <- str_c("http://ufcstats.com/statistics/fighters?char=", i, "&page=all")
@@ -50,5 +56,7 @@ fighterdataclean <- fighterdata |>
          num_fights = W + L + D,
          win_pct = W / num_fights) |>
   select(-c(Ht., Wt., Reach))
+
+write_csv(fighterdataclean, "fighterdata.csv")
 ```
 
