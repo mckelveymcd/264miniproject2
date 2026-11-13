@@ -17,12 +17,80 @@ Our explore questions are:
 
 
 ```{r}
+#| echo: FALSE
 library(tidyverse)
 library(rvest)
 library(polite)
 library(chromote)
 ```
 
+
+```{r scraping}
+#| echo: FALSE
+
+robotstxt::paths_allowed("http://ufcstats.com/statistics/fighters?char=a")
+
+set_chrome_args(c(
+  default_chrome_args(),
+  "--disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable"
+)) #chrome says the site is unsafe, so had to run this so that it will bypass the warning and we can get our data.
+
+url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a&page=all")
+#url$view()
+
+table <- html_nodes(url, css = "table")
+
+fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
+
+for(i in letters){
+  url <- str_c("http://ufcstats.com/statistics/fighters?char=", i, "&page=all")
+  fighterdatatemp <- read_html_live(url) |>
+    html_nodes(css = "table") |>
+    html_table(header = TRUE, fill = TRUE)
+  bind_rows(fighterdata, fighterdatatemp)
+  fighterdatatemp <- fighterdatatemp[[1]]
+  fighterdata <- bind_rows(fighterdata, fighterdatatemp)
+}
+
+ft_in_to_in <- function(str){
+  feet <- str_extract(str, "^\\d' ")
+  inches <- parse_number(str_remove(str, feet))
+  feet <- parse_number(str_remove(feet, "' "))
+  str <- 12*feet + inches
+}
+
+ft_in_to_in(fighterdataclean$Ht.)
+
+fighterdataclean <- fighterdata |>
+  select(-Belt) |>
+  filter(!is.na(Last)) |>
+  mutate(across(everything(), ~ str_replace_all(.x, "--", NA_character_)),
+         Ht. = ifelse(is.na(Ht.), "0' 0\"", Ht.),
+         ht_inches = ft_in_to_in(Ht.),
+         Ht. = ifelse(str_detect(Ht., "0' 0\""), NA_character_, Ht.),
+         ht_inches = ifelse(str_detect(Ht., "0' 0\""), NA_character_, ht_inches),
+         reach_inches = parse_number(Reach),
+         weight_lbs = parse_number(Wt.),
+         across(W:D, parse_number),
+         num_fights = W + L + D,
+         win_pct = W / num_fights,
+         reach_height_ratio = reach_inches / ht_inches,
+         weight_group = case_when(
+                          is.na(weight_lbs) ~ NA_character_,
+                          weight_lbs <= 115 ~ "Strawweight",
+                          weight_lbs <= 125 ~ "Flyweight",
+                          weight_lbs <= 135 ~ "Bantamweight",
+                          weight_lbs <= 145 ~ "Featherweight",
+                          weight_lbs <= 155 ~ "Lightweight",
+                          weight_lbs <= 170 ~ "Welterweight",
+                          weight_lbs <= 185 ~ "Middleweight",
+                          weight_lbs <= 205 ~ "Light Heavyweight",
+                          TRUE ~ "Heavyweight")
+          ) |>
+  select(-c(Ht., Wt., Reach))
+
+write_csv(fighterdataclean, "fighterdata.csv")
+```
 
 #Weight Class UFC Category 
 
@@ -46,7 +114,7 @@ weight_group_from_lbs <- function(weight_lbs) {
 
 
 ```{r}
-fighterdata <- read_csv("/Users/khalid/Desktop/Data Science Resource/fighterdata.csv", show_col_types = FALSE)
+fighterdata <- read_csv("~/SDS264/264miniproject2/fighterdata.csv", show_col_types = FALSE)
 
 ```
 

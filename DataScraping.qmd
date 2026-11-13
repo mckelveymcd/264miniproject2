@@ -54,7 +54,20 @@ fighterdataclean <- fighterdata |>
          weight_lbs = parse_number(Wt.),
          across(W:D, parse_number),
          num_fights = W + L + D,
-         win_pct = W / num_fights) |>
+         win_pct = W / num_fights,
+         reach_height_ratio = reach_inches / ht_inches,
+         weight_group = case_when(
+                          is.na(weight_lbs) ~ NA_character_,
+                          weight_lbs <= 115 ~ "Strawweight",
+                          weight_lbs <= 125 ~ "Flyweight",
+                          weight_lbs <= 135 ~ "Bantamweight",
+                          weight_lbs <= 145 ~ "Featherweight",
+                          weight_lbs <= 155 ~ "Lightweight",
+                          weight_lbs <= 170 ~ "Welterweight",
+                          weight_lbs <= 185 ~ "Middleweight",
+                          weight_lbs <= 205 ~ "Light Heavyweight",
+                          TRUE ~ "Heavyweight")
+          ) |>
   select(-c(Ht., Wt., Reach))
 
 write_csv(fighterdataclean, "fighterdata.csv")
