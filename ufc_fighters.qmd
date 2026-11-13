@@ -6,7 +6,7 @@ format: html
 
 ## About our UFC data
 
-We got UFC fighter data from [UFCStats.com](http://ufcstats.com/statistics/fighters). Each row is one fighter. The scraping code is in `DataScraping.qmd`. 
+We got UFC fighter data from [UFCStats.com](http://ufcstats.com/statistics/fighters). Each row is one fighter. 
 
 Our explore questions are:
 
@@ -38,9 +38,9 @@ set_chrome_args(c(
 url <- read_html_live("http://ufcstats.com/statistics/fighters?char=a&page=all")
 #url$view()
 
-table <- html_nodes(url, css = "table")
+table <- html_nodes(url, css = "table") #pull table from site
 
-fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]]
+fighterdata <- html_table(table, header = TRUE, fill = TRUE)[[1]] #make tibble
 
 for(i in letters){
   url <- str_c("http://ufcstats.com/statistics/fighters?char=", i, "&page=all")
@@ -50,7 +50,7 @@ for(i in letters){
   bind_rows(fighterdata, fighterdatatemp)
   fighterdatatemp <- fighterdatatemp[[1]]
   fighterdata <- bind_rows(fighterdata, fighterdatatemp)
-}
+} #iterate for rest of letters
 
 ft_in_to_in <- function(str){
   feet <- str_extract(str, "^\\d' ")
@@ -59,37 +59,21 @@ ft_in_to_in <- function(str){
   str <- 12*feet + inches
 }
 
-ft_in_to_in(fighterdataclean$Ht.)
-
 fighterdataclean <- fighterdata |>
   select(-Belt) |>
   filter(!is.na(Last)) |>
   mutate(across(everything(), ~ str_replace_all(.x, "--", NA_character_)),
-         Ht. = ifelse(is.na(Ht.), "0' 0\"", Ht.),
+         Ht. = ifelse(is.na(Ht.), "0' 0\"", Ht.), #ft to inches function can't handle NAs, so making NA height 0
          ht_inches = ft_in_to_in(Ht.),
-         Ht. = ifelse(str_detect(Ht., "0' 0\""), NA_character_, Ht.),
-         ht_inches = ifelse(str_detect(Ht., "0' 0\""), NA_character_, ht_inches),
+         Ht. = ifelse(str_detect(Ht., "0' 0\""), NA_character_, Ht.), #changing NA heights back into NA
+         ht_inches = ifelse(str_detect(Ht., "0' 0\""), NA_character_, ht_inches), #changing NA heights back into NA
          reach_inches = parse_number(Reach),
          weight_lbs = parse_number(Wt.),
          across(W:D, parse_number),
          num_fights = W + L + D,
          win_pct = W / num_fights,
-         reach_height_ratio = reach_inches / ht_inches,
-         weight_group = case_when(
-                          is.na(weight_lbs) ~ NA_character_,
-                          weight_lbs <= 115 ~ "Strawweight",
-                          weight_lbs <= 125 ~ "Flyweight",
-                          weight_lbs <= 135 ~ "Bantamweight",
-                          weight_lbs <= 145 ~ "Featherweight",
-                          weight_lbs <= 155 ~ "Lightweight",
-                          weight_lbs <= 170 ~ "Welterweight",
-                          weight_lbs <= 185 ~ "Middleweight",
-                          weight_lbs <= 205 ~ "Light Heavyweight",
-                          TRUE ~ "Heavyweight")
-          ) |>
+         reach_height_ratio = reach_inches / ht_inches) |>
   select(-c(Ht., Wt., Reach))
-
-write_csv(fighterdataclean, "fighterdata.csv")
 ```
 
 #Weight Class UFC Category 
@@ -112,16 +96,10 @@ weight_group_from_lbs <- function(weight_lbs) {
 }
 ```
 
-
-```{r}
-fighterdata <- read_csv("~/SDS264/264miniproject2/fighterdata.csv", show_col_types = FALSE)
-
-```
-
 ## Cleaning the data
 
 ```{r}
-fighterdataclean <- fighterdata |>
+fighterdataclean <- fighterdataclean |>
   # New col: reach compared to height, and weight group
   mutate(
     reach_height_ratio = reach_inches / ht_inches,
@@ -139,8 +117,9 @@ fighterdataclean <- fighterdata |>
   )
 ```
 
-## Checking the data with NA's and etc
+The data was acquired from a public site and all fighters joined the UFC voluntarily, knowing their data would become public, so we do not have any ethical concerns with scraping this data. The website has no robots.txt and no information about scraping on their website or terms and conditions, so this also does now present a dilemma. Because the website uses http:// instead of https://, we were unable to use the `polite` package, but still made our best effort to scrape the data ethically.
 
+## Checking the data with NA's and etc
 
 ```{r}
 # Checking NAs in each col
@@ -187,22 +166,26 @@ fighterdataclean |>
 ufc_final <- fighterdataclean |>
   filter(num_fights > 0) |>
   distinct()
+
+write_csv(fighterdataclean, "fighterdata.csv")
 ```
 
-
-```{r}
-write_csv(ufc_final, "ufc_fighters_clean.csv")
-```
 
 ## Terms in each cols and their meanings:
 
-- The clean file has one row for each fighter. 'first_name', `last_name', and 'nicknam'  are the fighter's names.
+- The clean file has one row for each fighter. `first_name`, `last_name`, and `nickname`  are the fighter's names.
 
-- 'wins', 'losses', and 'draws' are the number of fights won, lost, and tied. 
+- `wins`, `losses`, and `draws` are the number of fights won, lost, and tied. 
 
-- 'stance' is how the fighter stands, like Orthodox or Southpaw. 
+- `stance` is how the fighter stands, like Orthodox or Southpaw. 
 
-- 'ht_inches', 'reach_inches', and 'weight_lbs' are height and reach in inches and weight in pounds.
+- `ht_inches`, `reach_inches`, and `weight_lbs` are height and reach in inches and weight in pounds.
+
+- `num_fights` is the number of fights that the fighter has on record and `win_pct` is the percentage of these fights that are wins. 
+
+- `reach_height_ratio` is the ratio of the fighter's reach to their height.
+
+- `weight_group` is the fighter's weight class, like Lightweight or Middleweight.
 
 ## Plots
 
@@ -302,3 +285,5 @@ ufc_5 |>
 - Plot 3: Orthodox and Southpaw technique fights win about the same (about 70%). Switch is a little higher (about 75%), but it has fewer fighters.
 
 Finally, we can't say that reach causes winning. Fighters who lose a lot often leave the UFC, so the fighters we see are not a typical group.
+
+
